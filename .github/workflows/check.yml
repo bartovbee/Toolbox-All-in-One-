@@ -14,10 +14,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check index exists
         run: test -s index.html
-      - name: Check essential content
+      - name: Check toolbox features
         run: |
           grep -q 'MikroTik Toolbox All-in-One' index.html
-          grep -q 'generateAuto' index.html
-          grep -q 'generateBurst' index.html
-          grep -q 'generatePcc' index.html
-          grep -q 'generateLogin' index.html
+          grep -q 'PCC Load Balancing' index.html
+          grep -q 'Burst Limit Calculator' index.html
+          grep -q 'DHCP Server Template' index.html
+          grep -q 'Hotspot Basic' index.html
+          grep -q 'Generate Script' index.html
+          grep -q 'Unduh .rsc' index.html
