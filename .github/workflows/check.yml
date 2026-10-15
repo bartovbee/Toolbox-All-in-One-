@@ -1,0 +1,23 @@
+name: Check static website
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check index exists
+        run: test -s index.html
+      - name: Check essential content
+        run: |
+          grep -q 'MikroTik Toolbox All-in-One' index.html
+          grep -q 'generateAuto' index.html
+          grep -q 'generateBurst' index.html
+          grep -q 'generatePcc' index.html
+          grep -q 'generateLogin' index.html
