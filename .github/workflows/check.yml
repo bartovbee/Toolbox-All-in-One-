@@ -12,8 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check index exists
-        run: test -s index.html
+      - name: Check required pages
+        run: |
+          test -s index.html
+          test -s pcc-generator.html
       - name: Check toolbox features
         run: |
           grep -q 'MikroTik Toolbox All-in-One' index.html
@@ -21,5 +23,26 @@ jobs:
           grep -q 'Burst Limit Calculator' index.html
           grep -q 'DHCP Server Template' index.html
           grep -q 'Hotspot Basic' index.html
+          grep -q 'Static Route' index.html
+          grep -q 'VLAN Interface' index.html
+          grep -q 'PPPoE Server Basic' index.html
+          grep -q 'PCC Generator Lengkap' index.html
           grep -q 'Generate Script' index.html
           grep -q 'Unduh .rsc' index.html
+      - name: Check inline JavaScript syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess, sys
+          files = [Path("index.html"), Path("pcc-generator.html")]
+          count = 0
+          for page in files:
+              html = page.read_text(encoding="utf-8")
+              scripts = re.findall(r"<script[^>]*>(.*?)</script>", html, re.S | re.I)
+              for i, script in enumerate(scripts):
+                  target = Path(f"/tmp/{page.stem}-{i}.js")
+                  target.write_text(script, encoding="utf-8")
+                  subprocess.run(["node", "--check", str(target)], check=True)
+                  count += 1
+          print(f"JavaScript syntax OK: {count} inline script(s)")
+          PY
