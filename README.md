@@ -1,22 +1,28 @@
 # MikroTik Toolbox All-in-One by BartovBee
 
-Website satu halaman bertema putih-biru, dengan Poppins/fallback font system, dan generator yang dijalankan lokal di browser. Tidak ada build step atau backend.
+Website bertema putih-biru dengan generator konfigurasi yang berjalan lokal di browser. Tidak ada backend atau build step.
 
-## Fitur awal
-- Auto Internet MikroTik: template dasar WAN DHCP, bridge LAN, IP gateway, DHCP pool/server, DNS, NAT, NTP opsional.
-- Kalkulator Burst Limit: membentuk parameter queue dari max-limit, threshold, limit, dan time.
-- PCC Generator: template mangle PCC; lengkapi gateway, routing marks, dan route sebelum diterapkan.
-- Login Page Maker: membuat template hotspot HTML yang bisa diunduh.
-- Copy output dan download .rsc / .html.
+## Website
+- [Toolbox utama](https://bartovbee.github.io/Toolbox-All-in-One-/)
+- [PCC Load Balancing Generator (halaman khusus)](https://bartovbee.github.io/Toolbox-All-in-One-/pcc-generator.html)
+
+## Tools yang tersedia
+- Auto Internet / DHCP Client
+- Burst Limit Calculator
+- PCC Load Balancing
+- NAT Masquerade
+- DHCP Server Template
+- DNS & Cache
+- Backup & Export
+- Hotspot Basic
+- Firewall Filter Dasar
+- PCC Generator khusus: mangle PCC 2-WAN, routing mark/table RouterOS v6/v7, NAT dan route dasar; hasil harus ditinjau dan disesuaikan dengan gateway ISP.
 
 ## Menjalankan offline
-Unduh repository sebagai ZIP lalu buka `index.html` langsung di browser. Tampilan dan generator menggunakan CSS/JavaScript yang tertanam di file; tidak perlu CDN atau paket eksternal. Poppins akan menggunakan fallback font sistem bila font lokal belum disertakan.
+Unduh repository sebagai ZIP lalu buka `index.html` atau `pcc-generator.html` langsung di browser. CSS dan JavaScript tertanam di masing-masing file; tidak perlu CDN atau paket eksternal. Poppins akan memakai fallback font sistem bila font lokal belum tersedia.
 
-## Publish dengan GitHub Pages
-1. Buka **Settings → Pages** di repository.
-2. Pada **Build and deployment**, pilih **Deploy from a branch**.
-3. Pilih branch `main` dan folder `/ (root)`, lalu klik **Save**.
-4. Tunggu deployment selesai di tab **Actions** atau halaman Pages. Karena repo ini bernama `Toolbox-All-in-One-`, URL proyek biasanya berbentuk `https://bartovbee.github.io/Toolbox-All-in-One-/`.
+## GitHub Pages
+Repository ini memakai GitHub Pages dari branch `main` dan folder root. URL project: https://bartovbee.github.io/Toolbox-All-in-One-/
 
-## Keamanan
-Periksa dan sesuaikan semua nama interface, subnet, gateway, dan sintaks sesuai RouterOS v6/v7 sebelum mengimpor konfigurasi. Generator adalah titik awal, bukan pengganti backup, firewall review, atau pengujian di perangkat uji. PCC sengaja memberi kerangka mangle saja karena perlu gateway/route ISP dari jaringan masing-masing.
+## Catatan penting
+Semua output adalah template awal, bukan jaminan konfigurasi siap produksi. Periksa nama interface, subnet, gateway, routing table, urutan firewall, FastTrack, DNS dan versi RouterOS. Buat backup dan uji dahulu di perangkat/lab aman. Generator PCC tidak pernah diuji langsung pada router fisik.
