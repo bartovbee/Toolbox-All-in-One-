@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0878e8"><title>PCC Generator — BartovBee</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f2f7fc;color:#172033;font:14px/1.6 Poppins,Inter,system-ui,-apple-system,"Segoe UI",sans-serif}.wrap{max-width:1000px;margin:auto;padding:22px}.card{background:#fff;border:1px solid #dce6f2;border-radius:18px;box-shadow:0 10px 28px #153e7010;padding:22px;margin-bottom:16px}h1{font-size:clamp(22px,4vw,30px);margin:0 0 6px}h2{font-size:17px;margin:0 0 14px}.muted{color:#64748b}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.field{display:flex;flex-direction:column;gap:5px}label{font-size:12px;font-weight:700}input,select{padding:10px;border:1px solid #cbd8e8;border-radius:9px;font:inherit;width:100%}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}.btn{border:1px solid #cbd8e8;background:#fff;border-radius:9px;padding:10px 14px;font:inherit;font-weight:700;cursor:pointer}.primary{background:#0878e8;border-color:#0878e8;color:white}pre{margin:0;background:#101d31;color:#d9e8ff;padding:16px;border-radius:12px;white-space:pre-wrap;overflow:auto;min-height:250px;font:12px/1.7 ui-monospace,Consolas,monospace}.warn{padding:12px;background:#fff8e6;border:1px solid #f4dfaa;border-radius:11px;color:#6b5418}.status{margin-top:10px;color:#087443}@media(max-width:650px){.wrap{padding:10px}.card{padding:15px}.grid{grid-template-columns:1fr}}
+</style></head><body><main class="wrap">
+<section class="card"><h1>MikroTik PCC Load Balancing Generator</h1><div class="muted">BartovBee · Multi-WAN PCC template for RouterOS v6/v7 (IPv4)</div><p>Isi interface LAN/WAN, gateway dan jumlah koneksi. Generator menghasilkan mangle PCC, routing mark/table, NAT dan default route untuk diperiksa sebelum dipakai.</p><a href="./index.html">← Kembali ke Toolbox utama</a></section>
+<section class="card"><h2>Parameter jaringan</h2><div class="grid">
+<div class="field"><label for="lan">Interface LAN / bridge</label><input id="lan" value="bridge"></div>
+<div class="field"><label for="lanip">IP router LAN (CIDR)</label><input id="lanip" value="192.168.88.1/24"></div>
+<div class="field"><label for="wan1">Interface WAN 1</label><input id="wan1" value="ether1"></div>
+<div class="field"><label for="gw1">Gateway WAN 1</label><input id="gw1" value="192.168.1.1"></div>
+<div class="field"><label for="wan2">Interface WAN 2</label><input id="wan2" value="ether2"></div>
+<div class="field"><label for="gw2">Gateway WAN 2</label><input id="gw2" value="192.168.2.1"></div>
+<div class="field"><label for="version">RouterOS</label><select id="version"><option value="7">RouterOS v7 (routing tables)</option><option value="6">RouterOS v6 (routing-mark)</option></select></div>
+<div class="field"><label for="mode">Mode</label><select id="mode"><option value="both">Load balance + failover basic</option><option value="balance">Load balance only</option></select></div>
+</div><div class="actions"><button class="btn primary" id="generate">Generate PCC</button><button class="btn" id="copy">Salin script</button><button class="btn" id="download">Unduh .rsc</button><button class="btn" id="reset">Reset</button></div></section>
+<section class="card"><h2>Script output</h2><pre id="out">Klik Generate PCC untuk membuat konfigurasi.</pre><div class="status" id="status" role="status">Siap.</div></section>
+<section class="card warn"><b>Penting sebelum import:</b> ini template IPv4 dengan asumsi gateway WAN statis dan LAN sudah memiliki DHCP/address yang benar. Jika WAN memakai DHCP, gateway bisa berubah dan rule perlu disesuaikan. Periksa konflik nama routing table, urutan mangle/firewall, FastTrack, dan konfigurasi yang sudah ada. Backup router dan uji di lab terlebih dahulu. Generator tidak menguji script di router fisik.</section>
+</main><script>
+const $=id=>document.getElementById(id);let script='';
+function val(id){return $(id).value.trim()}
+function safe(s){return s.replace(/[^a-zA-Z0-9_.-]/g,'_')}
+function generate(){
+ const lan=val('lan'),lanip=val('lanip'),w1=val('wan1'),g1=val('gw1'),w2=val('wan2'),g2=val('gw2'),v=val('version'),mode=val('mode');
+ if(!lan||!lanip||!w1||!g1||!w2||!g2){$('status').textContent='Semua field wajib diisi.';return}
+ if(w1===w2||lan===w1||lan===w2){$('status').textContent='Interface LAN dan kedua WAN harus berbeda.';return}
+ const r1='to_WAN1',r2='to_WAN2';
+ let s='# MikroTik PCC Load Balancing | BartovBee\n# Review semua nilai sebelum menjalankan.\n';
+ if(v==='7')s+='/routing/table add name='+r1+' fib\n/routing/table add name='+r2+' fib\n';
+ s+='# Address LAN (hapus baris ini bila address sudah ada)\n/ip/address add address='+lanip+' interface='+lan+' comment="PCC LAN"\n';
+ s+='# Mark koneksi baru dari LAN secara PCC 2-WAN\n/ip/firewall/mangle add chain=prerouting in-interface='+lan+' dst-address-type=!local connection-mark=no-mark per-connection-classifier=both-addresses-and-ports:2/0 action=mark-connection new-connection-mark=WAN1_conn passthrough=yes comment="PCC WAN1"\n';
+ s+='/ip/firewall/mangle add chain=prerouting in-interface='+lan+' dst-address-type=!local connection-mark=no-mark per-connection-classifier=both-addresses-and-ports:2/1 action=mark-connection new-connection-mark=WAN2_conn passthrough=yes comment="PCC WAN2"\n';
+ s+='/ip/firewall/mangle add chain=prerouting in-interface='+lan+' connection-mark=WAN1_conn action=mark-routing new-routing-mark='+r1+' passthrough=no comment="Route PCC WAN1"\n';
+ s+='/ip/firewall/mangle add chain=prerouting in-interface='+lan+' connection-mark=WAN2_conn action=mark-routing new-routing-mark='+r2+' passthrough=no comment="Route PCC WAN2"\n';
+ s+='/ip/firewall/mangle add chain=output connection-mark=WAN1_conn action=mark-routing new-routing-mark='+r1+' passthrough=no comment="Router output WAN1"\n';
+ s+='/ip/firewall/mangle add chain=output connection-mark=WAN2_conn action=mark-routing new-routing-mark='+r2+' passthrough=no comment="Router output WAN2"\n';
+ s+='# NAT per WAN\n/ip/firewall/nat add chain=srcnat out-interface='+w1+' action=masquerade comment="PCC NAT WAN1"\n/ip/firewall/nat add chain=srcnat out-interface='+w2+' action=masquerade comment="PCC NAT WAN2"\n';
+ if(v==='7'){
+ s+='# Routing table routes (RouterOS v7)\n/ip/route add dst-address=0.0.0.0/0 gateway='+g1+'@main routing-table='+r1+' check-gateway=ping comment="PCC WAN1 table"\n/ip/route add dst-address=0.0.0.0/0 gateway='+g2+'@main routing-table='+r2+' check-gateway=ping comment="PCC WAN2 table"\n';
+ }else{
+ s+='# Routing-mark routes (RouterOS v6)\n/ip/route add dst-address=0.0.0.0/0 gateway='+g1+' routing-mark='+r1+' check-gateway=ping comment="PCC WAN1 table"\n/ip/route add dst-address=0.0.0.0/0 gateway='+g2+' routing-mark='+r2+' check-gateway=ping comment="PCC WAN2 table"\n';
+ }
+ if(mode==='both')s+='# Main table fallback/failover for router-originated/unmarked traffic\n/ip/route add dst-address=0.0.0.0/0 gateway='+g1+' distance=1 check-gateway=ping comment="WAN1 main primary"\n/ip/route add dst-address=0.0.0.0/0 gateway='+g2+' distance=2 check-gateway=ping comment="WAN2 main backup"\n';
+ s+='# NOTE: review WAN reachability, local subnet exclusions, FastTrack, DNS and existing firewall rules.\n';
+ script=s;$('out').textContent=s;$('status').textContent='Script dibuat. Backup dan review sebelum import.';
+}
+$('generate').onclick=generate;
+$('copy').onclick=async()=>{if(!script){$('status').textContent='Generate script dulu.';return}try{await navigator.clipboard.writeText(script);$('status').textContent='Script disalin.'}catch(e){$('status').textContent='Clipboard ditolak browser; salin output secara manual.'}};
+$('download').onclick=()=>{if(!script)generate();if(!script)return;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([script],{type:'text/plain;charset=utf-8'}));a.download='pcc-bartovbee-routeros-v'+val('version')+'.rsc';a.click();URL.revokeObjectURL(a.href)};
+$('reset').onclick=()=>{location.reload()};
+</script></body></html>
